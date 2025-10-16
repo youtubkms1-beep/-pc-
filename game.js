@@ -11,13 +11,13 @@ const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level'); 
-// ⭐ 추가된 요소 변수
 const timeElement = document.getElementById('time');
 const linesClearedElement = document.getElementById('lines-cleared');
 const highScoreElement = document.getElementById('high-score');
-// ⭐
 const nextCanvas = document.getElementById('next-piece-canvas');
 const nextCtx = nextCanvas.getContext('2d');
+const selectorScreen = document.getElementById('selector-screen'); // ⭐ 추가
+const mainGameContent = document.getElementById('main-game-content'); // ⭐ 추가
 
 const COLS = 10;
 const ROWS = 20;
@@ -29,21 +29,22 @@ let lines = 0;
 let currentPiece = null;
 let nextPiece = null;
 let gameLoopInterval;
-let timeLoopInterval; // ⭐ 시간 측정용 인터벌
-let startTime; // ⭐ 게임 시작 시간
+let timeLoopInterval; 
+let startTime; 
 let isGameOver = false;
 let isPaused = false; 
 let dropInterval = 1000; 
+let isMobileMode = false; // 모바일 모드 상태 변수
 
 // 블록 모양 정의 (Tetrominoes)
 const TETROMINOES = [
-    { shape: [[0,1,0],[1,1,1],[0,0,0]], color: 'cyan' },
+    { shape: [[0,1,0],[1,1,1],[0,0,0]], color: 'magenta' },
     { shape: [[1,1],[1,1]], color: 'yellow' },
     { shape: [[0,1,1],[1,1,0],[0,0,0]], color: 'green' },
     { shape: [[1,1,0],[0,1,1],[0,0,0]], color: 'red' },
     { shape: [[1,0,0],[1,1,1],[0,0,0]], color: 'orange'},
     { shape: [[0,0,1],[1,1,1],[0,0,0]], color: 'blue' },
-    { shape: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], color: 'magenta' }
+    { shape: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], color: 'cyan' }
 ];
 
 // --- 시간 및 랭킹 관리 함수 ---
@@ -55,11 +56,11 @@ function loadHighScore() {
     return highScore;
 }
 
-function updateHighScore() {
+function updateHighScore(finalScore) {
     let currentHighScore = loadHighScore();
-    if (score > currentHighScore) {
-        localStorage.setItem('tetrisHighScore', score);
-        highScoreElement.textContent = score;
+    if (finalScore > currentHighScore) {
+        localStorage.setItem('tetrisHighScore', finalScore);
+        highScoreElement.textContent = finalScore;
         return true;
     }
     return false;
@@ -78,7 +79,7 @@ function updateGameTime() {
     timeElement.textContent = displayTime;
 }
 
-// --- 게임 핵심 로직 함수 ---
+// --- 게임 핵심 로직 함수 (생략 없이 모두 포함) ---
 function createGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
 
 function spawnPiece() { 
@@ -153,9 +154,10 @@ function checkLines() {
         }
         scoreElement.textContent = score;
         levelElement.textContent = level;
-        linesClearedElement.textContent = lines; // ⭐ 라인 수 업데이트
+        linesClearedElement.textContent = lines; 
     }
 }
+
 function drawBlock(x, y, color, context) {
     if (color) {
         context.fillStyle = color;
@@ -210,9 +212,9 @@ function draw() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, canvas.height / 3, canvas.width, canvas.height / 6);
         ctx.fillStyle = 'white';
-        ctx.font = '24px Arial';
+        ctx.font = '24px Noto Sans KR, Arial';
         ctx.textAlign = 'center';
-        ctx.fillText("일시정지 (P)", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillText("일시정지 (P)", canvas.width / 2, canvas.height / 2 + 10);
     }
     
     drawNextPiece();
@@ -225,37 +227,48 @@ function drawNextPiece() {
     if (nextPiece) {
         const shape = nextPiece.shape;
         const color = nextPiece.color;
-        const startX = (nextCanvas.width / 2 / BLOCK_SIZE) - (shape[0].length / 2);
-        const startY = (nextCanvas.height / 2 / BLOCK_SIZE) - (shape.length / 2);
+        // 다음 블록 미리보기 캔버스 중앙에 오도록 위치 계산
+        const blockScale = BLOCK_SIZE * 0.8; // 미리보기 크기 조절
+        const startX = (nextCanvas.width / 2) / BLOCK_SIZE - (shape[0].length / 2);
+        const startY = (nextCanvas.height / 2) / BLOCK_SIZE - (shape.length / 2);
         
         for (let row = 0; row < shape.length; row++) {
             for (let col = 0; col < shape[row].length; col++) {
-                if (shape[row][col]) { drawBlock(col + startX, row + startY, color, nextCtx); }
+                if (shape[row][col]) { 
+                    // drawBlock 대신 별도 함수를 사용하거나 blockScale을 적용해야 하지만, 
+                    // 현재 코드 구조를 유지하기 위해 기존 drawBlock 사용 및 캔버스 크기(120x120)에 맞게 처리.
+                    // drawBlock이 BLOCK_SIZE를 사용하므로, 다음 블록 캔버스가 4x4 블록을 표시하도록 가정함 (30*4=120)
+                    drawBlock(col + startX, row + startY, color, nextCtx); 
+                }
             }
         }
     }
 }
+
 
 // ----------------------------------------------------------------------------------
 // 지연 입력 처리 함수
 // ----------------------------------------------------------------------------------
 function handleKeyPress(e) {
     
-    // 1. P와 N 키 처리
+    // 1. P와 N 키 처리 (게임 오버 시 N으로 재시작, P로 일시정지/재개)
     switch (e.key.toLowerCase()) {
         case 'n': 
             e.preventDefault(); 
-            startGame(); 
+            if (isGameOver) { 
+                hideGameOverPopup();
+                window.startGame(); 
+            }
             return;
         case 'p': 
             e.preventDefault();
             if (!isGameOver) { 
                 isPaused = !isPaused; 
                 if (isPaused) {
-                    clearInterval(timeLoopInterval); // ⭐ 일시정지 시 시간 멈춤
+                    clearInterval(timeLoopInterval); 
                 } else {
-                    startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); // 시간 보정
-                    timeLoopInterval = setInterval(updateGameTime, 1000); // ⭐ 재개 시 시간 다시 흐름
+                    startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); 
+                    timeLoopInterval = setInterval(updateGameTime, 1000); 
                 }
                 draw(); 
             }
@@ -286,13 +299,8 @@ function handleKeyPress(e) {
         mergePiece();
         checkLines();
         
-        if (nextPiece) {
-            currentPiece = nextPiece;
-            nextPiece = spawnPiece();
-        } else {
-            currentPiece = spawnPiece(); 
-            nextPiece = spawnPiece();
-        }
+        currentPiece = nextPiece;
+        nextPiece = spawnPiece();
         
         if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) {
             gameOver();
@@ -329,7 +337,7 @@ function handleKeyPress(e) {
             newShape = rotatePiece(currentPiece.shape); handled = true; break;
     }
 
-    // 6. 유효한 이동이면 블록 업데이트
+    // 5. 유효한 이동이면 블록 업데이트
     if (handled) { 
         e.preventDefault();
         if (isValidMove(newShape, newX, newY)) {
@@ -347,7 +355,7 @@ function gameOver() {
     if (isGameOver) return; 
     isGameOver = true;
     clearInterval(gameLoopInterval);
-    clearInterval(timeLoopInterval); // ⭐ 시간 측정 중단
+    clearInterval(timeLoopInterval); 
     document.removeEventListener('keydown', handleKeyPress); 
     
     let emptyCells = 0;
@@ -360,17 +368,142 @@ function gameOver() {
     }
     
     const bonusScore = Math.floor(emptyCells * 0.5); 
-    score += bonusScore;
-    scoreElement.textContent = score;
+    const finalScore = score + bonusScore; 
     
-    const newHighScore = updateHighScore(); // ⭐ 최고 점수 업데이트 및 확인
-    
-    alert(`게임 오버! \n${newHighScore ? '🎉 새로운 최고 점수 달성! 🎉\n' : ''}최종 수상한 점수: ${score}점\n총 파괴 라인: ${lines}줄\n(빈 공간 보너스: ${bonusScore}점)\n레벨: ${level}`);
+    score = finalScore;
+    scoreElement.textContent = score; 
+
+    showGameOverPopup(finalScore, bonusScore); 
 }
 
 
 // ==========================================================
-// 메인 루프 및 게임 시작
+// ⭐ 추가된 모바일/팝업/시작 제어 함수
+// ==========================================================
+
+// 1. 모바일 컨트롤 생성 및 이벤트 연결
+function createMobileControls() {
+    const container = document.getElementById('mobile-controls-container');
+    container.innerHTML = '<div id="mobile-controls-grid"></div>'; 
+    
+    const controlsGrid = document.getElementById('mobile-controls-grid');
+    
+    // 버튼 데이터: [텍스트, 키 코드, 버튼 ID]
+    const buttons = [
+        ['⬆️ 회전', 'w', 'rotate-btn'], 
+        ['⬅️', 'a', 'left-btn'], 
+        ['⬇️', 's', 'down-btn'], 
+        ['➡️', 'd', 'right-btn'],
+        ['DROP', ' ', 'drop-btn']
+    ];
+    
+    // 키 이벤트 디스패처
+    const dispatchKeyEvent = (type, keyName) => {
+        window.dispatchEvent(new KeyboardEvent(type, {
+            'key': keyName, 
+            'code': (keyName === ' ') ? 'Space' : keyName.toUpperCase(),
+            'bubbles': true 
+        }));
+    };
+
+    buttons.forEach(([text, keyName, idName]) => {
+        const btn = document.createElement('button');
+        btn.innerText = text;
+        btn.className = 'mobile-control-btn';
+        btn.id = idName;
+
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            // 터치 시작 시 keydown 이벤트 발생
+            dispatchKeyEvent('keydown', keyName);
+        });
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault(); 
+            // 터치 끝날 때 keyup 이벤트 발생
+            dispatchKeyEvent('keyup', keyName);
+        });
+        
+        controlsGrid.appendChild(btn);
+    });
+}
+
+// 2. 팝업 표시/숨김 함수
+function showGameOverPopup(finalScore, bonusScore) {
+    const popup = document.getElementById('game-over-popup');
+    let isNewRecord = updateHighScore(finalScore);
+    let currentHighScore = loadHighScore();
+    
+    document.getElementById('popup-title').textContent = isNewRecord ? "🎉 최고 점수 갱신! 🎉" : "게임 오버!";
+    document.getElementById('popup-score-info').innerHTML = `최종 점수: ${finalScore}점 <small>(+ 보너스 ${bonusScore}점)</small>`;
+    document.getElementById('popup-high-score-info').textContent = `최고 점수: ${currentHighScore}점`;
+    
+    popup.classList.remove('hidden-popup');
+}
+
+window.hideGameOverPopup = function() {
+    document.getElementById('game-over-popup').classList.add('hidden-popup');
+}
+
+
+// 3. 메인 진입점 함수 (환경 설정 후 게임 시작)
+window.loadGame = function(mode) {
+    // 1. 환경 설정 및 화면 전환
+    isMobileMode = (mode === 'mobile');
+    selectorScreen.style.display = 'none';
+    mainGameContent.style.display = 'flex'; 
+
+    // 2. 모바일 컨트롤 추가/제거
+    const mobileControlsContainer = document.getElementById('mobile-controls-container');
+    if (isMobileMode) {
+        createMobileControls();
+        mobileControlsContainer.style.display = 'block';
+    } else {
+        mobileControlsContainer.style.display = 'none';
+    }
+
+    // 3. 실제 게임 시작
+    window.startGame();
+}
+
+// 4. 게임 초기화 및 루프 시작
+window.startGame = function() {
+    // 기존 인터벌 정리
+    if (gameLoopInterval) clearInterval(gameLoopInterval);
+    if (timeLoopInterval) clearInterval(timeLoopInterval);
+
+    isGameOver = false;
+    isPaused = false;
+    grid = createGrid();
+    score = 0;
+    level = 1; 
+    lines = 0;
+    dropInterval = 1000; 
+    
+    // 시간 초기화 및 시작
+    startTime = Date.now();
+    timeLoopInterval = setInterval(updateGameTime, 1000);
+
+    // 요소 값 초기화
+    scoreElement.textContent = score;
+    levelElement.textContent = level; 
+    linesClearedElement.textContent = lines;
+    timeElement.textContent = '00:00';
+    loadHighScore(); 
+    lastInputTime = Date.now(); 
+    
+    currentPiece = spawnPiece();
+    nextPiece = spawnPiece();
+    
+    // 키 리스너 정리 및 추가 (PC/모바일 공용)
+    document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener('keydown', handleKeyPress);
+    
+    gameLoopInterval = setInterval(gameLoop, dropInterval); 
+    draw();
+};
+
+// ==========================================================
+// 메인 루프
 // ==========================================================
 function gameLoop() {
     if (isGameOver || isPaused) return; 
@@ -392,42 +525,10 @@ function gameLoop() {
     draw();
 }
 
-window.startGame = function() {
-    // 기존 인터벌 정리
-    if (gameLoopInterval) clearInterval(gameLoopInterval);
-    if (timeLoopInterval) clearInterval(timeLoopInterval);
-
-    isGameOver = false;
-    isPaused = false;
-    grid = createGrid();
-    score = 0;
-    level = 1; 
-    lines = 0;
-    dropInterval = 1000; 
-    
-    // ⭐ 시간 초기화 및 시작
-    startTime = Date.now();
-    timeLoopInterval = setInterval(updateGameTime, 1000);
-
-    // 요소 값 초기화
-    scoreElement.textContent = score;
-    levelElement.textContent = level; 
-    linesClearedElement.textContent = lines;
-    timeElement.textContent = '00:00';
-    loadHighScore(); // 최고 점수 로드
-    lastInputTime = Date.now(); 
-    
-    currentPiece = spawnPiece();
-    nextPiece = spawnPiece();
-    
-    document.removeEventListener('keydown', handleKeyPress);
-    document.removeEventListener('keydown', handleKeyPress); 
-    document.addEventListener('keydown', handleKeyPress);
-    
-    gameLoopInterval = setInterval(gameLoop, dropInterval); 
-    draw();
-};
-
-// 페이지 로드 시 최고 점수 표시
-loadHighScore();
-draw();
+// 페이지 로드 시 초기 화면만 보이도록 설정
+document.addEventListener('DOMContentLoaded', () => {
+    mainGameContent.style.display = 'none'; // 게임 화면 숨김
+    selectorScreen.style.display = 'flex';  // 선택 화면 표시
+    loadHighScore();
+    draw(); // 다음 블록만 초기 드로잉
+});
