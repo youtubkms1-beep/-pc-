@@ -10,7 +10,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden; /* 모바일에서 스크롤 방지 */
+    overflow: hidden; 
 }
 
 /* ---------------------------------- */
@@ -24,7 +24,7 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.95);
     color: white;
-    display: none; /* JS에서 flex로 변경하여 초기화면으로 사용 */
+    display: none; 
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -48,29 +48,19 @@ body {
 
 
 /* ---------------------------------- */
-/* 2. 메인 게임 레이아웃 (game-container) */
+/* 2. 메인 게임 레이아웃 */
 /* ---------------------------------- */
 .game-container {
-    display: none; /* JS에서 flex로 변경하여 표시 */
-    flex-direction: column; /* 모바일 환경을 고려하여 column으로 변경하여 세로 배치 */
+    display: none; 
+    flex-direction: column; 
     align-items: center;
-    gap: 15px; /* 모바일 시 간격 조정 */
+    gap: 15px; 
     padding: 20px;
     border: 5px solid #444;
     background-color: #333;
     border-radius: 10px;
     position: relative; 
-    max-width: 90vw; /* 모바일 화면에 맞게 최대 너비 설정 */
-}
-
-@media (min-width: 600px) {
-    .game-container {
-        flex-direction: row; /* PC 환경에서는 가로 배치 */
-        max-width: none;
-    }
-    #mobile-controls-container {
-        display: none !important; /* PC에서는 컨트롤 숨김 */
-    }
+    max-width: 90vw; 
 }
 
 h1 {
@@ -91,7 +81,7 @@ h1 {
     flex-direction: column;
     text-align: left;
     min-width: 180px;
-    margin-top: 10px; /* 모바일 세로 배치 시 간격 */
+    margin-top: 10px; 
 }
 .info p { margin: 5px 0; font-size: 16px; }
 .info span { font-weight: bold; color: #00ff99; }
@@ -112,23 +102,53 @@ h1 {
 
 
 /* ---------------------------------- */
-/* 3. 모바일 컨트롤 스타일 */
+/* 3. 미디어 쿼리 (모바일 레이아웃 및 버튼 고정) */
 /* ---------------------------------- */
-#mobile-controls-container {
-    /* 모바일에서는 게임 영역 아래에 배치되도록 수정 */
-    position: relative;
-    width: 100%;
-    margin-top: 20px;
-    padding: 10px 0;
-    box-sizing: border-box;
-    display: none; /* JS에서 모바일 모드일 때만 block으로 변경 */
+@media (min-width: 600px) {
+    .game-container {
+        flex-direction: row; /* PC 환경에서는 가로 배치 */
+        max-width: none;
+    }
+    #mobile-controls-container {
+        display: none !important; /* PC에서는 컨트롤 숨김 */
+    }
 }
 
+@media (max-width: 600px) {
+    .game-container {
+        padding-bottom: 80px; /* 고정 버튼 공간 확보 */
+    }
+    
+    #mobile-controls-container {
+        /* ⭐ 모바일 버튼을 화면 하단에 고정하여 터치 가능하도록 강제 */
+        position: fixed; 
+        bottom: 0;       
+        left: 0;
+        width: 100%;
+        height: 70px;
+        padding: 10px;
+        box-sizing: border-box;
+        background-color: rgba(34, 34, 34, 0.9); 
+        z-index: 500;
+        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .controls {
+        display: none; /* 모바일에서 PC 컨트롤 설명 숨김 */
+    }
+}
+
+
+/* ---------------------------------- */
+/* 4. 모바일 컨트롤 디자인 */
+/* ---------------------------------- */
 #mobile-controls-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5개 버튼이 가로로 나열되도록 변경 */
+    grid-template-columns: repeat(5, 1fr); 
     gap: 10px;
     width: 90%;
+    max-width: 500px;
+    height: 100%;
     margin: 0 auto;
 }
 
@@ -139,20 +159,24 @@ h1 {
     background-color: #555;
     color: white;
     border: none;
-    border-radius: 8px; /* 원형 대신 사각형으로 변경 */
+    border-radius: 8px; 
     width: 100%;
     height: 50px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    touch-action: manipulation;
+    /* 터치 이벤트 충돌 방지 */
+    touch-action: manipulation; 
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    /* grid-area를 사용하지 않고 순차적으로 배치 */
+    transition: background-color 0.1s;
 }
-/* 드롭 버튼을 중앙에 배치하고 넓게 사용 */
+.mobile-control-btn:active {
+    background-color: #777;
+}
+
 #drop-btn { 
-    grid-column: span 5; /* 5칸 모두 사용 */
+    grid-column: span 5; 
     height: 60px;
     background-color: #ff6666;
     font-size: 18px;
@@ -161,7 +185,7 @@ h1 {
 
 
 /* ---------------------------------- */
-/* 4. 게임 오버 팝업 스타일 */
+/* 5. 게임 오버 팝업 스타일 */
 /* ---------------------------------- */
 .hidden-popup {
     display: none !important;
@@ -187,7 +211,7 @@ h1 {
     text-align: center;
     box-shadow: 0 0 30px rgba(255, 100, 100, 0.7);
     border: 3px solid #ff6666;
-    max-width: 80vw; /* 모바일에서 잘리지 않도록 설정 */
+    max-width: 80vw; 
 }
 
 #popup-title { color: #ff6666; font-size: 36px; margin-bottom: 20px; }
