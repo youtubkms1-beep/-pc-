@@ -1,7 +1,11 @@
 // ==========================================================
-// 지연 난이도 설정
+// 게임 상수 및 설정
 // ==========================================================
+const MAX_LEVEL = 50; // ⭐ 최대 레벨 50 설정
+const DROP_INTERVAL_MIN = 100; // ⭐ 50레벨에서 100ms 간격 (극악 난이도)
+const DROP_INTERVAL_MAX = 1000;
 const DELAY_TIME_MS = 200; 
+
 let lastInputTime = 0; 
 
 // ==========================================================
@@ -73,7 +77,37 @@ function updateGameTime() {
     if (timeElement) timeElement.textContent = displayTime;
 }
 
-// --- 게임 핵심 로직 함수 (생략된 부분은 기존과 동일) ---
+// --- 레벨 및 난이도 조정 함수 ---
+function calculateDropInterval(currentLevel) {
+    // 레벨 1부터 MAX_LEVEL까지 선형적으로 속도가 빨라지도록 계산
+    if (currentLevel >= MAX_LEVEL) return DROP_INTERVAL_MIN;
+
+    const levelRange = MAX_LEVEL - 1;
+    const speedRange = DROP_INTERVAL_MAX - DROP_INTERVAL_MIN;
+    
+    // 현재 레벨에 따른 속도 감소량
+    const reduction = (currentLevel - 1) * (speedRange / levelRange);
+    
+    return Math.max(DROP_INTERVAL_MIN, DROP_INTERVAL_MAX - reduction);
+}
+
+function updateLevel() {
+    const newLevel = Math.min(MAX_LEVEL, Math.floor(lines / 10) + 1);
+    
+    if (newLevel > level) {
+        level = newLevel;
+        // 새로운 드롭 간격 계산
+        dropInterval = calculateDropInterval(level); 
+        
+        clearInterval(gameLoopInterval);
+        gameLoopInterval = setInterval(gameLoop, dropInterval);
+    }
+
+    if (levelElement) levelElement.textContent = level;
+}
+
+
+// --- 게임 핵심 로직 함수 (일부 생략) ---
 function createGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
 function spawnPiece() { 
     const randIndex = Math.floor(Math.random() * TETROMINOES.length);
@@ -127,18 +161,18 @@ function checkLines() {
         }
     }
     if (linesCleared > 0) {
-        const baseScore = 1000 * linesCleared;
-        const lineScore = baseScore + (linesCleared * level * 50); 
+        // ⭐ 점수 계산 로직 수정: 레벨에 비례하여 점수 증가
+        const baseScore = 100 * linesCleared;
+        // 레벨이 높을수록 기본 점수에 레벨 보너스가 곱해짐 (레벨당 10% 추가)
+        const levelMultiplier = 1 + (level * 0.1); 
+        const lineScore = Math.floor(baseScore * levelMultiplier); 
+        
         score += lineScore;
         lines += linesCleared;
-        if (Math.floor(lines / 10) + 1 > level) {
-            level = Math.floor(lines / 10) + 1;
-            dropInterval = Math.max(100, 1000 - (level - 1) * 100); 
-            clearInterval(gameLoopInterval);
-            gameLoopInterval = setInterval(gameLoop, dropInterval);
-        }
+        
+        updateLevel(); // 레벨 업데이트 호출
+        
         if (scoreElement) scoreElement.textContent = score;
-        if (levelElement) levelElement.textContent = level;
         if (linesClearedElement) linesClearedElement.textContent = lines; 
     }
 }
@@ -233,12 +267,19 @@ function gameOver() {
 }
 
 // ==========================================================
-// ⭐ 이동/회전/하드 드롭 핵심 로직 (터치/키보드 공용)
+// 이동/회전/하드 드롭 핵심 로직 (터치/키보드 공용)
 // ==========================================================
 
 function movePiece(direction) {
     if (isGameOver || isPaused || !currentPiece) return false;
     
+    // ⭐ 레벨이 높을수록 입력 지연 시간 없이 바로 반응
+    const currentTime = Date.now();
+    if (level < 20 && currentTime - lastInputTime < DELAY_TIME_MS) { 
+        return false; 
+    }
+    lastInputTime = currentTime; 
+
     let newX = currentPiece.x;
     let newY = currentPiece.y;
     let newShape = currentPiece.shape;
@@ -324,10 +365,7 @@ function handleKeyPress(e) {
         return; 
     }
 
-    // 4. 나머지 이동 키에 대해서만 지연 시간 확인
-    const currentTime = Date.now();
-    if (currentTime - lastInputTime < DELAY_TIME_MS) { return; }
-
+    // 4. 나머지 이동 키 처리 (movePiece 내부에서 지연 시간 체크)
     let direction;
     switch (e.key.toLowerCase()) {
         case 'arrowleft': case 'a': direction = 'left'; break;
@@ -339,12 +377,11 @@ function handleKeyPress(e) {
 
     if (movePiece(direction)) { 
         e.preventDefault();
-        lastInputTime = currentTime; 
     }
 }
 
 // ==========================================================
-// ⭐ HTML에서 접근 가능하도록 window 객체에 할당 (모바일 컨트롤)
+// HTML에서 접근 가능하도록 window 객체에 할당 (모바일 컨트롤)
 // ==========================================================
 
 // 1. 모바일 컨트롤 생성 및 이벤트 연결
@@ -359,9 +396,9 @@ function createMobileControls() {
     const buttons = [
         ['⬆️', 'rotate', 'rotate-btn'], 
         ['⬅️', 'left', 'left-btn'], 
-        ['⬇️', 'down', 'down-btn'], // ⬇️는 이제 터치패드 오른쪽 상단
+        ['⬇️', 'down', 'down-btn'], 
         ['➡️', 'right', 'right-btn'],
-        ['하드\n드롭', 'drop', 'drop-btn'] // 하드 드롭은 이제 터치패드 중앙 상단
+        ['하드\n드롭', 'drop', 'drop-btn']
     ];
     
     buttons.forEach(([text, action, idName]) => {
@@ -370,7 +407,7 @@ function createMobileControls() {
         btn.className = 'mobile-control-btn';
         btn.id = idName;
 
-        // ⭐ 핵심: 터치 시 해당 동작 함수를 직접 호출
+        // 핵심: 터치 시 해당 동작 함수를 직접 호출
         const handleAction = (e) => {
             e.preventDefault(); 
             e.stopPropagation(); 
@@ -447,7 +484,7 @@ window.startGame = function() {
     score = 0;
     level = 1; 
     lines = 0;
-    dropInterval = 1000; 
+    dropInterval = DROP_INTERVAL_MAX; // 초기 드롭 간격 설정
     startTime = Date.now();
     timeLoopInterval = setInterval(updateGameTime, 1000);
     if (scoreElement) scoreElement.textContent = score;
@@ -470,8 +507,6 @@ window.startGame = function() {
 function gameLoop() {
     if (isGameOver || isPaused) return; 
     if (!currentPiece) return; 
-    // y+1로 이동이 유효한지 체크할 때, 현재 y가 아닌 currentPiece.y를 사용해야 합니다. 
-    // (이전 코드에서 오타가 있었을 수 있습니다. y 대신 currentPiece.y로 수정)
     if (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
         currentPiece.y++;
     } else {
@@ -484,7 +519,7 @@ function gameLoop() {
     draw();
 }
 
-// ⭐ 페이지 로드 시 초기 화면만 보이도록 설정 (JS 파일 로딩 완료 후 즉시 실행)
+// 페이지 로드 시 초기 화면만 보이도록 설정
 (function() {
     function initializeOnLoad() {
         const selectorScreen = document.getElementById('selector-screen');
