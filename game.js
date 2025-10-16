@@ -320,7 +320,7 @@ function handleKeyPress(e) {
     // 3. 스페이스바(하드 드롭) 처리
     if (e.key.toLowerCase() === ' ') {
         e.preventDefault();
-        hardDropPiece(); // ⭐ 직접 함수 호출
+        hardDropPiece(); 
         return; 
     }
 
@@ -337,7 +337,7 @@ function handleKeyPress(e) {
         default: return; // 처리할 키가 아니면 종료
     }
 
-    if (movePiece(direction)) { // ⭐ 직접 함수 호출
+    if (movePiece(direction)) { 
         e.preventDefault();
         lastInputTime = currentTime; 
     }
@@ -359,9 +359,9 @@ function createMobileControls() {
     const buttons = [
         ['⬆️', 'rotate', 'rotate-btn'], 
         ['⬅️', 'left', 'left-btn'], 
-        ['⬇️', 'down', 'down-btn'], 
+        ['⬇️', 'down', 'down-btn'], // ⬇️는 이제 터치패드 오른쪽 상단
         ['➡️', 'right', 'right-btn'],
-        ['하드\n드롭', 'drop', 'drop-btn']
+        ['하드\n드롭', 'drop', 'drop-btn'] // 하드 드롭은 이제 터치패드 중앙 상단
     ];
     
     buttons.forEach(([text, action, idName]) => {
@@ -375,9 +375,8 @@ function createMobileControls() {
             e.preventDefault(); 
             e.stopPropagation(); 
             if (action === 'drop') {
-                hardDropPiece(); // 하드 드롭
+                hardDropPiece(); 
             } else {
-                // 일반 이동, 회전 (지연 시간 체크는 movePiece 내부에서 진행)
                 movePiece(action); 
             }
         };
@@ -388,7 +387,7 @@ function createMobileControls() {
         // 마우스 클릭 이벤트: PC 환경에서의 디버깅을 위해 유지
         btn.addEventListener('mousedown', handleAction);
         
-        // touchend, mouseup 이벤트 (액션 종료. 여기서는 블록이 멈추지 않으므로 빈 함수 유지)
+        // touchend, mouseup 이벤트 (액션 종료)
         const handleRelease = (e) => { e.preventDefault(); e.stopPropagation(); };
         btn.addEventListener('touchend', handleRelease, { passive: false }); 
         btn.addEventListener('mouseup', handleRelease);
@@ -471,7 +470,9 @@ window.startGame = function() {
 function gameLoop() {
     if (isGameOver || isPaused) return; 
     if (!currentPiece) return; 
-    if (isValidMove(currentPiece.shape, currentPiece.y, currentPiece.y + 1)) {
+    // y+1로 이동이 유효한지 체크할 때, 현재 y가 아닌 currentPiece.y를 사용해야 합니다. 
+    // (이전 코드에서 오타가 있었을 수 있습니다. y 대신 currentPiece.y로 수정)
+    if (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
         currentPiece.y++;
     } else {
         mergePiece();
