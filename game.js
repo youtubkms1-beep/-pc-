@@ -73,9 +73,9 @@ function updateGameTime() {
     if (timeElement) timeElement.textContent = displayTime;
 }
 
-// --- 게임 핵심 로직 함수 (생략) ---
+// --- 게임 핵심 로직 함수 (생략된 부분은 기존과 동일) ---
 function createGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
-function spawnPiece() { /* ... */
+function spawnPiece() { 
     const randIndex = Math.floor(Math.random() * TETROMINOES.length);
     const { shape, color } = TETROMINOES[randIndex];
     return { 
@@ -85,13 +85,13 @@ function spawnPiece() { /* ... */
         y: 0 
     };
 }
-function rotatePiece(shape) { /* ... */
+function rotatePiece(shape) { 
     const N = shape.length;
     const newShape = Array.from({ length: N }, () => Array(N).fill(0));
     for (let y = 0; y < N; y++) { for (let x = 0; x < N; x++) { newShape[x][N - 1 - y] = shape[y][x]; } }
     return newShape;
 }
-function isValidMove(shape, x, y) { /* ... */
+function isValidMove(shape, x, y) { 
     for (let row = 0; row < shape.length; row++) {
         for (let col = 0; col < shape[row].length; col++) {
             if (shape[row][col]) {
@@ -103,7 +103,7 @@ function isValidMove(shape, x, y) { /* ... */
     }
     return true;
 }
-function mergePiece() { /* ... */
+function mergePiece() { 
     if (!currentPiece) return; 
     const mergeColor = 'white'; 
     for (let row = 0; row < currentPiece.shape.length; row++) {
@@ -116,7 +116,7 @@ function mergePiece() { /* ... */
         }
     }
 }
-function checkLines() { /* ... */
+function checkLines() { 
     let linesCleared = 0;
     for (let y = ROWS - 1; y >= 0; y--) {
         if (grid[y].every(cell => cell !== 0)) {
@@ -142,7 +142,7 @@ function checkLines() { /* ... */
         if (linesClearedElement) linesClearedElement.textContent = lines; 
     }
 }
-function drawBlock(x, y, color, context) { /* ... */
+function drawBlock(x, y, color, context) { 
     if (color) {
         context.fillStyle = color;
         context.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
@@ -150,7 +150,7 @@ function drawBlock(x, y, color, context) { /* ... */
         context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     }
 }
-function drawGridLines(context) { /* ... */
+function drawGridLines(context) { 
     context.strokeStyle = '#333'; 
     context.lineWidth = 1;
     for (let x = 1; x < COLS; x++) {
@@ -166,7 +166,7 @@ function drawGridLines(context) { /* ... */
         context.stroke();
     }
 }
-function draw() { /* ... */
+function draw() { 
     if (!ctx) return;
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -195,7 +195,7 @@ function draw() { /* ... */
     }
     drawNextPiece();
 }
-function drawNextPiece() { /* ... */
+function drawNextPiece() { 
     if (!nextCtx) return;
     nextCtx.fillStyle = '#222';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
@@ -213,89 +213,7 @@ function drawNextPiece() { /* ... */
         }
     }
 }
-function handleKeyPress(e) { /* ... */
-    // 1. P와 N 키 처리
-    switch (e.key.toLowerCase()) {
-        case 'n': 
-            e.preventDefault(); 
-            if (isGameOver) { 
-                window.hideGameOverPopup(); // ⭐ window. 명시
-                window.startGame(); // ⭐ window. 명시
-            }
-            return;
-        case 'p': 
-            e.preventDefault();
-            if (!isGameOver) { 
-                isPaused = !isPaused; 
-                if (isPaused) { clearInterval(timeLoopInterval); } 
-                else {
-                    startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); 
-                    timeLoopInterval = setInterval(updateGameTime, 1000); 
-                }
-                draw(); 
-            }
-            return;
-    }
-    // 2. 게임 오버 또는 일시정지 상태에서는 다른 키 무시
-    if (isGameOver || isPaused) { e.preventDefault(); return; }
-
-    // 3. 스페이스바(하드 드롭) 처리
-    if (e.key.toLowerCase() === ' ') {
-        e.preventDefault();
-        if (!currentPiece) return; 
-        let hardDropPoints = 0;
-        while (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
-            currentPiece.y++;
-            hardDropPoints++;
-        }
-        score += hardDropPoints * 2;
-        if (scoreElement) scoreElement.textContent = score;
-        mergePiece();
-        checkLines();
-        currentPiece = nextPiece;
-        nextPiece = spawnPiece();
-        if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) { gameOver(); }
-        draw(); 
-        return; 
-    }
-
-    // 4. 나머지 이동 키에 대해서만 지연 시간 확인
-    const currentTime = Date.now();
-    if (currentTime - lastInputTime < DELAY_TIME_MS) { return; }
-
-    if (!currentPiece) return; 
-    let handled = false;
-    let newX = currentPiece.x;
-    let newY = currentPiece.y;
-    let newShape = currentPiece.shape;
-
-    switch (e.key.toLowerCase()) {
-        case 'arrowleft': case 'a': newX--; handled = true; break;
-        case 'arrowright': case 'd': newX++; handled = true; break;
-        case 'arrowdown': case 's': 
-            newY++; 
-            if (isValidMove(currentPiece.shape, currentPiece.x, newY)) {
-                score += 1; 
-                if (scoreElement) scoreElement.textContent = score;
-            }
-            handled = true; break;
-        case 'arrowup': case 'w': case 'x': 
-            newShape = rotatePiece(currentPiece.shape); handled = true; break;
-    }
-
-    // 5. 유효한 이동이면 블록 업데이트
-    if (handled) { 
-        e.preventDefault();
-        if (isValidMove(newShape, newX, newY)) {
-            currentPiece.shape = newShape;
-            currentPiece.x = newX;
-            currentPiece.y = newY;
-        }
-        lastInputTime = currentTime; 
-        draw(); 
-    }
-}
-function gameOver() { /* ... */
+function gameOver() { 
     if (isGameOver) return; 
     isGameOver = true;
     clearInterval(gameLoopInterval);
@@ -311,44 +229,170 @@ function gameOver() { /* ... */
     const finalScore = score + bonusScore; 
     score = finalScore;
     if (scoreElement) scoreElement.textContent = score; 
-    window.showGameOverPopup(finalScore, bonusScore); // ⭐ window. 명시
+    window.showGameOverPopup(finalScore, bonusScore);
 }
 
+// ==========================================================
+// ⭐ 이동/회전/하드 드롭 핵심 로직 (터치/키보드 공용)
+// ==========================================================
+
+function movePiece(direction) {
+    if (isGameOver || isPaused || !currentPiece) return false;
+    
+    let newX = currentPiece.x;
+    let newY = currentPiece.y;
+    let newShape = currentPiece.shape;
+    let handled = false;
+
+    switch (direction) {
+        case 'left': newX--; handled = true; break;
+        case 'right': newX++; handled = true; break;
+        case 'down': 
+            newY++; 
+            if (isValidMove(currentPiece.shape, currentPiece.x, newY)) {
+                score += 1; 
+                if (scoreElement) scoreElement.textContent = score;
+            }
+            handled = true; break;
+        case 'rotate':
+            newShape = rotatePiece(currentPiece.shape);
+            handled = true;
+            break;
+    }
+
+    if (handled) {
+        if (isValidMove(newShape, newX, newY)) {
+            currentPiece.shape = newShape;
+            currentPiece.x = newX;
+            currentPiece.y = newY;
+            draw();
+            return true;
+        }
+    }
+    return false;
+}
+
+function hardDropPiece() {
+    if (isGameOver || isPaused || !currentPiece) return;
+    
+    let hardDropPoints = 0;
+    while (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+        currentPiece.y++;
+        hardDropPoints++;
+    }
+    score += hardDropPoints * 2;
+    if (scoreElement) scoreElement.textContent = score;
+    mergePiece();
+    checkLines();
+    currentPiece = nextPiece;
+    nextPiece = spawnPiece();
+    if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) { gameOver(); }
+    draw(); 
+}
 
 // ==========================================================
-// ⭐ HTML에서 접근 가능하도록 window 객체에 할당
+// 키보드 입력 처리
+// ==========================================================
+function handleKeyPress(e) {
+    // 1. P와 N 키 처리
+    switch (e.key.toLowerCase()) {
+        case 'n': 
+            e.preventDefault(); 
+            if (isGameOver) { window.hideGameOverPopup(); window.startGame(); }
+            return;
+        case 'p': 
+            e.preventDefault();
+            if (!isGameOver) { 
+                isPaused = !isPaused; 
+                if (isPaused) { clearInterval(timeLoopInterval); } 
+                else {
+                    startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); 
+                    timeLoopInterval = setInterval(updateGameTime, 1000); 
+                }
+                draw(); 
+            }
+            return;
+    }
+
+    // 2. 게임 오버 또는 일시정지 상태에서는 다른 키 무시
+    if (isGameOver || isPaused) { e.preventDefault(); return; }
+
+    // 3. 스페이스바(하드 드롭) 처리
+    if (e.key.toLowerCase() === ' ') {
+        e.preventDefault();
+        hardDropPiece(); // ⭐ 직접 함수 호출
+        return; 
+    }
+
+    // 4. 나머지 이동 키에 대해서만 지연 시간 확인
+    const currentTime = Date.now();
+    if (currentTime - lastInputTime < DELAY_TIME_MS) { return; }
+
+    let direction;
+    switch (e.key.toLowerCase()) {
+        case 'arrowleft': case 'a': direction = 'left'; break;
+        case 'arrowright': case 'd': direction = 'right'; break;
+        case 'arrowdown': case 's': direction = 'down'; break;
+        case 'arrowup': case 'w': case 'x': direction = 'rotate'; break;
+        default: return; // 처리할 키가 아니면 종료
+    }
+
+    if (movePiece(direction)) { // ⭐ 직접 함수 호출
+        e.preventDefault();
+        lastInputTime = currentTime; 
+    }
+}
+
+// ==========================================================
+// ⭐ HTML에서 접근 가능하도록 window 객체에 할당 (모바일 컨트롤)
 // ==========================================================
 
 // 1. 모바일 컨트롤 생성 및 이벤트 연결
-function createMobileControls() { /* ... */
+function createMobileControls() {
     const container = document.getElementById('mobile-controls-container');
     if (!container) return; 
     container.innerHTML = '<div id="mobile-controls-grid"></div>'; 
     const controlsGrid = document.getElementById('mobile-controls-grid');
     if (!controlsGrid) return;
+
+    // 버튼 데이터: [텍스트, 이동 방향, ID]
     const buttons = [
-        ['⬆️', 'w', 'rotate-btn'], 
-        ['⬅️', 'a', 'left-btn'], 
-        ['⬇️', 's', 'down-btn'], 
-        ['➡️', 'd', 'right-btn'],
-        ['하드\n드롭', ' ', 'drop-btn']
+        ['⬆️', 'rotate', 'rotate-btn'], 
+        ['⬅️', 'left', 'left-btn'], 
+        ['⬇️', 'down', 'down-btn'], 
+        ['➡️', 'right', 'right-btn'],
+        ['하드\n드롭', 'drop', 'drop-btn']
     ];
     
-    const dispatchKeyEvent = (type, keyName) => {
-        window.dispatchEvent(new KeyboardEvent(type, {
-            'key': keyName, 
-            'code': (keyName === ' ') ? 'Space' : keyName.toUpperCase(),
-            'bubbles': true 
-        }));
-    };
-
-    buttons.forEach(([text, keyName, idName]) => {
+    buttons.forEach(([text, action, idName]) => {
         const btn = document.createElement('button');
         btn.innerHTML = text.replace('\n', '<br>');
         btn.className = 'mobile-control-btn';
         btn.id = idName;
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); dispatchKeyEvent('keydown', keyName); }, { passive: false }); 
-        btn.addEventListener('touchend', (e) => { e.preventDefault(); dispatchKeyEvent('keyup', keyName); }, { passive: false }); 
+
+        // ⭐ 핵심: 터치 시 해당 동작 함수를 직접 호출
+        const handleAction = (e) => {
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            if (action === 'drop') {
+                hardDropPiece(); // 하드 드롭
+            } else {
+                // 일반 이동, 회전 (지연 시간 체크는 movePiece 내부에서 진행)
+                movePiece(action); 
+            }
+        };
+
+        // 터치 시작 이벤트: 블록 이동 명령
+        btn.addEventListener('touchstart', handleAction, { passive: false }); 
+        
+        // 마우스 클릭 이벤트: PC 환경에서의 디버깅을 위해 유지
+        btn.addEventListener('mousedown', handleAction);
+        
+        // touchend, mouseup 이벤트 (액션 종료. 여기서는 블록이 멈추지 않으므로 빈 함수 유지)
+        const handleRelease = (e) => { e.preventDefault(); e.stopPropagation(); };
+        btn.addEventListener('touchend', handleRelease, { passive: false }); 
+        btn.addEventListener('mouseup', handleRelease);
+        
         controlsGrid.appendChild(btn);
     });
 }
@@ -375,16 +419,13 @@ window.hideGameOverPopup = function() {
 
 // 3. 메인 진입점 함수 (환경 설정 후 게임 시작)
 window.loadGame = function(mode) {
-    // 1. 환경 설정 및 화면 전환
     isMobileMode = (mode === 'mobile');
     const selectorScreen = document.getElementById('selector-screen');
     const mainGameContent = document.getElementById('main-game-content');
     
-    // ⭐ 선택 화면을 숨기고 메인 게임 콘텐츠를 표시합니다.
     if (selectorScreen) selectorScreen.style.display = 'none';
-    if (mainGameContent) mainGameContent.style.display = 'flex'; // ⭐ flex로 전환
+    if (mainGameContent) mainGameContent.style.display = 'flex'; 
 
-    // 2. 모바일 컨트롤 추가/제거
     const mobileControlsContainer = document.getElementById('mobile-controls-container');
     if (mobileControlsContainer) { 
         if (isMobileMode) {
@@ -394,8 +435,6 @@ window.loadGame = function(mode) {
             mobileControlsContainer.style.display = 'none';
         }
     }
-
-    // 3. 실제 게임 시작
     window.startGame();
 }
 
@@ -432,7 +471,7 @@ window.startGame = function() {
 function gameLoop() {
     if (isGameOver || isPaused) return; 
     if (!currentPiece) return; 
-    if (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+    if (isValidMove(currentPiece.shape, currentPiece.y, currentPiece.y + 1)) {
         currentPiece.y++;
     } else {
         mergePiece();
@@ -451,14 +490,11 @@ function gameLoop() {
         const mainGameContent = document.getElementById('main-game-content');
         
         if (selectorScreen && mainGameContent) {
-            // 초기에는 게임 내용을 숨기고 선택 화면을 보여줍니다.
             mainGameContent.style.display = 'none'; 
             selectorScreen.style.display = 'flex'; 
             loadHighScore();
             draw(); 
         }
     }
-
-    // 모든 리소스가 로드된 후 실행되도록 window.onload에 연결
     window.addEventListener('load', initializeOnLoad, { once: true });
 })();
