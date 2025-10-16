@@ -1,8 +1,8 @@
 // ==========================================================
 // 지연 난이도 설정
 // ==========================================================
-const DELAY_TIME_MS = 200; // 0.2초 지연 (밀리초)
-let lastInputTime = 0; // 마지막 키 입력 시간 저장
+const DELAY_TIME_MS = 200; 
+let lastInputTime = 0; 
 
 // ==========================================================
 // 게임 변수 및 캔버스 설정
@@ -16,8 +16,8 @@ const linesClearedElement = document.getElementById('lines-cleared');
 const highScoreElement = document.getElementById('high-score');
 const nextCanvas = document.getElementById('next-piece-canvas');
 const nextCtx = nextCanvas.getContext('2d');
-const selectorScreen = document.getElementById('selector-screen'); // ⭐ 추가
-const mainGameContent = document.getElementById('main-game-content'); // ⭐ 추가
+const selectorScreen = document.getElementById('selector-screen'); 
+const mainGameContent = document.getElementById('main-game-content'); 
 
 const COLS = 10;
 const ROWS = 20;
@@ -34,7 +34,7 @@ let startTime;
 let isGameOver = false;
 let isPaused = false; 
 let dropInterval = 1000; 
-let isMobileMode = false; // 모바일 모드 상태 변수
+let isMobileMode = false;
 
 // 블록 모양 정의 (Tetrominoes)
 const TETROMINOES = [
@@ -52,7 +52,7 @@ const TETROMINOES = [
 function loadHighScore() {
     const savedScore = localStorage.getItem('tetrisHighScore');
     const highScore = savedScore ? parseInt(savedScore) : 0;
-    highScoreElement.textContent = highScore;
+    if (highScoreElement) highScoreElement.textContent = highScore;
     return highScore;
 }
 
@@ -60,7 +60,7 @@ function updateHighScore(finalScore) {
     let currentHighScore = loadHighScore();
     if (finalScore > currentHighScore) {
         localStorage.setItem('tetrisHighScore', finalScore);
-        highScoreElement.textContent = finalScore;
+        if (highScoreElement) highScoreElement.textContent = finalScore;
         return true;
     }
     return false;
@@ -76,10 +76,10 @@ function updateGameTime() {
     const displayTime = 
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         
-    timeElement.textContent = displayTime;
+    if (timeElement) timeElement.textContent = displayTime;
 }
 
-// --- 게임 핵심 로직 함수 (생략 없이 모두 포함) ---
+// --- 게임 핵심 로직 함수 ---
 function createGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
 
 function spawnPiece() { 
@@ -152,9 +152,9 @@ function checkLines() {
             clearInterval(gameLoopInterval);
             gameLoopInterval = setInterval(gameLoop, dropInterval);
         }
-        scoreElement.textContent = score;
-        levelElement.textContent = level;
-        linesClearedElement.textContent = lines; 
+        if (scoreElement) scoreElement.textContent = score;
+        if (levelElement) levelElement.textContent = level;
+        if (linesClearedElement) linesClearedElement.textContent = lines; 
     }
 }
 
@@ -187,6 +187,7 @@ function drawGridLines(context) {
 }
 
 function draw() {
+    if (!ctx) return;
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -221,23 +222,19 @@ function draw() {
 }
 
 function drawNextPiece() { 
+    if (!nextCtx) return;
     nextCtx.fillStyle = '#222';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     
     if (nextPiece) {
         const shape = nextPiece.shape;
         const color = nextPiece.color;
-        // 다음 블록 미리보기 캔버스 중앙에 오도록 위치 계산
-        const blockScale = BLOCK_SIZE * 0.8; // 미리보기 크기 조절
         const startX = (nextCanvas.width / 2) / BLOCK_SIZE - (shape[0].length / 2);
         const startY = (nextCanvas.height / 2) / BLOCK_SIZE - (shape.length / 2);
         
         for (let row = 0; row < shape.length; row++) {
             for (let col = 0; col < shape[row].length; col++) {
                 if (shape[row][col]) { 
-                    // drawBlock 대신 별도 함수를 사용하거나 blockScale을 적용해야 하지만, 
-                    // 현재 코드 구조를 유지하기 위해 기존 drawBlock 사용 및 캔버스 크기(120x120)에 맞게 처리.
-                    // drawBlock이 BLOCK_SIZE를 사용하므로, 다음 블록 캔버스가 4x4 블록을 표시하도록 가정함 (30*4=120)
                     drawBlock(col + startX, row + startY, color, nextCtx); 
                 }
             }
@@ -251,7 +248,7 @@ function drawNextPiece() {
 // ----------------------------------------------------------------------------------
 function handleKeyPress(e) {
     
-    // 1. P와 N 키 처리 (게임 오버 시 N으로 재시작, P로 일시정지/재개)
+    // 1. P와 N 키 처리
     switch (e.key.toLowerCase()) {
         case 'n': 
             e.preventDefault(); 
@@ -294,7 +291,7 @@ function handleKeyPress(e) {
         }
         
         score += hardDropPoints * 2;
-        scoreElement.textContent = score;
+        if (scoreElement) scoreElement.textContent = score;
         
         mergePiece();
         checkLines();
@@ -330,7 +327,7 @@ function handleKeyPress(e) {
             newY++; 
             if (isValidMove(currentPiece.shape, currentPiece.x, newY)) {
                 score += 1; 
-                scoreElement.textContent = score;
+                if (scoreElement) scoreElement.textContent = score;
             }
             handled = true; break;
         case 'arrowup': case 'w': case 'x': 
@@ -350,7 +347,7 @@ function handleKeyPress(e) {
     }
 }
 
-// 게임 오버 로직 (잔여 공간 점수 계산 포함)
+// 게임 오버 로직
 function gameOver() {
     if (isGameOver) return; 
     isGameOver = true;
@@ -371,7 +368,7 @@ function gameOver() {
     const finalScore = score + bonusScore; 
     
     score = finalScore;
-    scoreElement.textContent = score; 
+    if (scoreElement) scoreElement.textContent = score; 
 
     showGameOverPopup(finalScore, bonusScore); 
 }
@@ -384,10 +381,13 @@ function gameOver() {
 // 1. 모바일 컨트롤 생성 및 이벤트 연결
 function createMobileControls() {
     const container = document.getElementById('mobile-controls-container');
+    if (!container) return; 
+    
     container.innerHTML = '<div id="mobile-controls-grid"></div>'; 
     
     const controlsGrid = document.getElementById('mobile-controls-grid');
-    
+    if (!controlsGrid) return;
+
     // 버튼 데이터: [텍스트, 키 코드, 버튼 ID]
     const buttons = [
         ['⬆️ 회전', 'w', 'rotate-btn'], 
@@ -412,16 +412,17 @@ function createMobileControls() {
         btn.className = 'mobile-control-btn';
         btn.id = idName;
 
+        // touchstart (키 다운 역할)
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault(); 
-            // 터치 시작 시 keydown 이벤트 발생
             dispatchKeyEvent('keydown', keyName);
-        });
+        }, { passive: false });
+        
+        // touchend (키 업 역할)
         btn.addEventListener('touchend', (e) => {
             e.preventDefault(); 
-            // 터치 끝날 때 keyup 이벤트 발생
             dispatchKeyEvent('keyup', keyName);
-        });
+        }, { passive: false });
         
         controlsGrid.appendChild(btn);
     });
@@ -430,18 +431,25 @@ function createMobileControls() {
 // 2. 팝업 표시/숨김 함수
 function showGameOverPopup(finalScore, bonusScore) {
     const popup = document.getElementById('game-over-popup');
+    if (!popup) return;
+    
     let isNewRecord = updateHighScore(finalScore);
     let currentHighScore = loadHighScore();
     
-    document.getElementById('popup-title').textContent = isNewRecord ? "🎉 최고 점수 갱신! 🎉" : "게임 오버!";
-    document.getElementById('popup-score-info').innerHTML = `최종 점수: ${finalScore}점 <small>(+ 보너스 ${bonusScore}점)</small>`;
-    document.getElementById('popup-high-score-info').textContent = `최고 점수: ${currentHighScore}점`;
+    const title = document.getElementById('popup-title');
+    const scoreInfo = document.getElementById('popup-score-info');
+    const highScoreInfo = document.getElementById('popup-high-score-info');
+
+    if (title) title.textContent = isNewRecord ? "🎉 최고 점수 갱신! 🎉" : "게임 오버!";
+    if (scoreInfo) scoreInfo.innerHTML = `최종 점수: ${finalScore}점 <small>(+ 보너스 ${bonusScore}점)</small>`;
+    if (highScoreInfo) highScoreInfo.textContent = `최고 점수: ${currentHighScore}점`;
     
     popup.classList.remove('hidden-popup');
 }
 
 window.hideGameOverPopup = function() {
-    document.getElementById('game-over-popup').classList.add('hidden-popup');
+    const popup = document.getElementById('game-over-popup');
+    if (popup) popup.classList.add('hidden-popup');
 }
 
 
@@ -449,16 +457,23 @@ window.hideGameOverPopup = function() {
 window.loadGame = function(mode) {
     // 1. 환경 설정 및 화면 전환
     isMobileMode = (mode === 'mobile');
-    selectorScreen.style.display = 'none';
-    mainGameContent.style.display = 'flex'; 
+    
+    // ⭐ HTML 요소 존재 확인 후 화면 전환
+    const selectorScreen = document.getElementById('selector-screen');
+    const mainGameContent = document.getElementById('main-game-content');
+    
+    if (selectorScreen) selectorScreen.style.display = 'none';
+    if (mainGameContent) mainGameContent.style.display = 'flex'; 
 
     // 2. 모바일 컨트롤 추가/제거
     const mobileControlsContainer = document.getElementById('mobile-controls-container');
-    if (isMobileMode) {
-        createMobileControls();
-        mobileControlsContainer.style.display = 'block';
-    } else {
-        mobileControlsContainer.style.display = 'none';
+    if (mobileControlsContainer) { 
+        if (isMobileMode) {
+            createMobileControls();
+            mobileControlsContainer.style.display = 'block'; 
+        } else {
+            mobileControlsContainer.style.display = 'none';
+        }
     }
 
     // 3. 실제 게임 시작
@@ -484,10 +499,11 @@ window.startGame = function() {
     timeLoopInterval = setInterval(updateGameTime, 1000);
 
     // 요소 값 초기화
-    scoreElement.textContent = score;
-    levelElement.textContent = level; 
-    linesClearedElement.textContent = lines;
-    timeElement.textContent = '00:00';
+    if (scoreElement) scoreElement.textContent = score;
+    if (levelElement) levelElement.textContent = level; 
+    if (linesClearedElement) linesClearedElement.textContent = lines;
+    if (timeElement) timeElement.textContent = '00:00';
+    
     loadHighScore(); 
     lastInputTime = Date.now(); 
     
@@ -525,10 +541,25 @@ function gameLoop() {
     draw();
 }
 
-// 페이지 로드 시 초기 화면만 보이도록 설정
-document.addEventListener('DOMContentLoaded', () => {
-    mainGameContent.style.display = 'none'; // 게임 화면 숨김
-    selectorScreen.style.display = 'flex';  // 선택 화면 표시
-    loadHighScore();
-    draw(); // 다음 블록만 초기 드로잉
-});
+// ⭐ 페이지 로드 시 초기 화면만 보이도록 설정 (DOMContentLoaded를 대체하여 강제 실행)
+(function() {
+    const selectorScreen = document.getElementById('selector-screen');
+    const mainGameContent = document.getElementById('main-game-content');
+    
+    if (selectorScreen && mainGameContent) {
+        mainGameContent.style.display = 'none'; 
+        selectorScreen.style.display = 'flex';  
+        loadHighScore();
+        draw(); 
+    } else {
+        // HTML 요소 로드 지연 시 대비 (Live Server가 아닌 환경)
+        window.addEventListener('load', () => {
+            if (selectorScreen && mainGameContent) {
+                mainGameContent.style.display = 'none'; 
+                selectorScreen.style.display = 'flex';  
+                loadHighScore();
+                draw(); 
+            }
+        });
+    }
+})();
