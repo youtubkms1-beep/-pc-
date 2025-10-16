@@ -161,9 +161,8 @@ function checkLines() {
         }
     }
     if (linesCleared > 0) {
-        // ⭐ 점수 계산 로직 수정: 레벨에 비례하여 점수 증가
+        // ⭐ 점수 계산 로직: 레벨에 비례하여 점수 증가
         const baseScore = 100 * linesCleared;
-        // 레벨이 높을수록 기본 점수에 레벨 보너스가 곱해짐 (레벨당 10% 추가)
         const levelMultiplier = 1 + (level * 0.1); 
         const lineScore = Math.floor(baseScore * levelMultiplier); 
         
@@ -273,7 +272,7 @@ function gameOver() {
 function movePiece(direction) {
     if (isGameOver || isPaused || !currentPiece) return false;
     
-    // ⭐ 레벨이 높을수록 입력 지연 시간 없이 바로 반응
+    // ⭐ 레벨이 높을수록 입력 지연 시간 없이 바로 반응 (PC/모바일 공통)
     const currentTime = Date.now();
     if (level < 20 && currentTime - lastInputTime < DELAY_TIME_MS) { 
         return false; 
