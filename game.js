@@ -390,11 +390,11 @@ function createMobileControls() {
 
     // 버튼 데이터: [텍스트, 키 코드, 버튼 ID]
     const buttons = [
-        ['⬆️ 회전', 'w', 'rotate-btn'], 
+        ['⬆️', 'w', 'rotate-btn'], 
         ['⬅️', 'a', 'left-btn'], 
         ['⬇️', 's', 'down-btn'], 
         ['➡️', 'd', 'right-btn'],
-        ['DROP', ' ', 'drop-btn']
+        ['하드 드롭', ' ', 'drop-btn'] // 'DROP' 대신 '하드 드롭'으로 텍스트 변경
     ];
     
     // 키 이벤트 디스패처
@@ -542,24 +542,23 @@ function gameLoop() {
 }
 
 // ⭐ 페이지 로드 시 초기 화면만 보이도록 설정 (DOMContentLoaded를 대체하여 강제 실행)
+// window.onload를 사용하거나, 스크립트가 body 끝에 있어 DOM이 준비된 후 실행되도록 함
 (function() {
-    const selectorScreen = document.getElementById('selector-screen');
-    const mainGameContent = document.getElementById('main-game-content');
-    
-    if (selectorScreen && mainGameContent) {
-        mainGameContent.style.display = 'none'; 
-        selectorScreen.style.display = 'flex';  
-        loadHighScore();
-        draw(); 
-    } else {
-        // HTML 요소 로드 지연 시 대비 (Live Server가 아닌 환경)
-        window.addEventListener('load', () => {
-            if (selectorScreen && mainGameContent) {
-                mainGameContent.style.display = 'none'; 
-                selectorScreen.style.display = 'flex';  
-                loadHighScore();
-                draw(); 
-            }
-        });
+    // HTML 요소가 로드되었는지 확인 후 실행
+    function initializeOnDomReady() {
+        const selectorScreen = document.getElementById('selector-screen');
+        const mainGameContent = document.getElementById('main-game-content');
+        
+        if (selectorScreen && mainGameContent) {
+            mainGameContent.style.display = 'none'; 
+            selectorScreen.style.display = 'flex';  
+            loadHighScore();
+            draw(); 
+        } else {
+            // HTML 요소가 아직 준비되지 않았다면, DOMContentLoaded 이벤트 리스너를 추가하여 대기
+            document.addEventListener('DOMContentLoaded', initializeOnDomReady, { once: true });
+        }
     }
+    // 스크립트가 로드되는 시점에 바로 실행 시도
+    initializeOnDomReady();
 })();
