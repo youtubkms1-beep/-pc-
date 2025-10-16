@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>🤫 수상한 테트리스</title>
-    <link rel="stylesheet" href="style.css?v=20251016_10"> 
+    <link rel="stylesheet" href="style.css?v=20251016_12"> 
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div id="selector-screen">
         <h1>접속 환경을 선택해 주세요</h1>
-        <button class="select-button" onclick="loadGame('pc')">💻 PC 환경 (키보드)</button>
-        <button class="select-button" onclick="loadGame('mobile')">📱 모바일 환경 (터치)</button>
+        <button class="select-button" onclick="window.loadGame('pc')">💻 PC 환경 (키보드)</button>
+        <button class="select-button" onclick="window.loadGame('mobile')">📱 모바일 환경 (터치)</button>
     </div>
 
     <div class="game-container" id="main-game-content">
@@ -43,12 +43,12 @@
                 <h2 id="popup-title">게임 오버!</h2>
                 <p id="popup-score-info">당신의 점수: 0점</p>
                 <p id="popup-high-score-info">최고 점수: 0점</p>
-                <button onclick="hideGameOverPopup(); startGame();">새 게임</button>
+                <button onclick="window.hideGameOverPopup(); window.startGame();">새 게임</button>
             </div>
         </div>
         
     </div>
     
-    <script src="game.js?v=20251016_10"></script>
+    <script src="game.js?v=20251016_12"></script>
 </body>
 </html>
