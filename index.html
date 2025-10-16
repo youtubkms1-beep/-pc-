@@ -2,11 +2,20 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>수상한 테트리스</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>🤫 수상한 테트리스</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="game-container">
+
+    <div id="selector-screen">
+        <h1>접속 환경을 선택해 주세요</h1>
+        <button class="select-button" onclick="loadGame('pc')">💻 PC 환경 (키보드)/pc 전용 환경(https://youtubkms1-beep.github.io/-/)</button>
+        <button >(https://youtubkms1-beep.github.io/-/)</button>
+        <button class="select-button" onclick="loadGame('mobile')">📱 모바일 환경 (터치)</button>
+    </div>
+
+    <div class="game-container" id="main-game-content">
         <h1>🤫 수상한 테트리스</h1>
         <canvas id="tetris-canvas" width="300" height="600"></canvas>
         <div class="info">
@@ -16,7 +25,7 @@
             <p>라인: <span id="lines-cleared">0</span></p> 
             <p>다음 블록:</p>
             <canvas id="next-piece-canvas" width="120" height="120"></canvas>
-            <button onclick="startGame()">수상하게 시작</button>
+            
             <div class="controls">
                 <h3>🏆 최고 점수: <span id="high-score">0</span></h3>
                 <p>이동: 방향키 4개, WASD</p>
@@ -26,7 +35,20 @@
                 <p>재시작: N</p>
             </div>
         </div>
+        
+        <div id="mobile-controls-container"></div>
+        
+        <div id="game-over-popup" class="hidden-popup">
+            <div class="popup-content">
+                <h2 id="popup-title">게임 오버!</h2>
+                <p id="popup-score-info">당신의 점수: 0점</p>
+                <p id="popup-high-score-info">최고 점수: 0점</p>
+                <button onclick="hideGameOverPopup(); startGame();">새 게임</button>
+            </div>
+        </div>
+        
     </div>
+    
     <script src="game.js"></script>
 </body>
 </html>
