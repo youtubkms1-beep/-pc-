@@ -85,8 +85,16 @@ h1 {
     min-width: 180px;
     margin-top: 10px; 
 }
-.info p { margin: 5px 0; font-size: 16px; }
+
+.stats-row {
+    display: flex;
+    justify-content: space-between; /* 항목 간 간격 최대화 */
+    width: 100%;
+    gap: 20px;
+}
+.info p { margin: 5px 0; font-size: 16px; flex-grow: 1; }
 .info span { font-weight: bold; color: #00ff99; }
+.next-label { text-align: center; width: 100%; font-weight: bold; margin-top: 10px; }
 
 #next-piece-canvas {
     border: 2px solid #555;
@@ -101,18 +109,28 @@ h1 {
     .game-container { flex-direction: row; max-width: none; min-height: auto; }
     #mobile-controls-container { display: none !important; }
     #tetris-canvas { max-height: none; }
+    /* PC에서는 다음 블록 정보가 아래로 정렬 */
+    .info { align-items: flex-start; } 
+    .next-label { text-align: left; }
 }
 
 @media (max-width: 600px) {
     .game-container {
+        /* 모바일 컨트롤 영역만큼 하단에 패딩 추가 */
         padding-bottom: 180px; 
         width: 100%; 
         max-width: none; 
         box-sizing: border-box;
+        /* 모바일에서 캔버스와 정보를 촘촘하게 배치 */
+        gap: 5px; 
     }
     
+    /* ⭐ 캔버스 위로 올리기: 제목 숨김 */
+    #game-title { display: none; } 
+
     #tetris-canvas {
-        max-height: calc(100vh - 300px); 
+        /* 캔버스 크기는 유지하되, 세로 여백 조절 */
+        max-height: calc(100vh - 250px); 
         width: auto; 
     }
     
@@ -131,19 +149,22 @@ h1 {
     }
 
     .controls { display: none; }
+    /* 정보 영역을 가로로 꽉 채우고 중앙 정렬 */
     .info { align-items: center; width: 100%; }
+    .stats-row { max-width: 300px; }
+    #next-piece-canvas { margin-bottom: 5px; }
 }
 
 
 /* ---------------------------------- */
-/* 4. 모바일 컨트롤 디자인 (이미지 레이아웃 구현) */
+/* 4. 모바일 컨트롤 디자인 (요청하신 최종 위치) */
 /* ---------------------------------- */
 #mobile-controls-grid {
     display: grid;
     /* 3열, 2행 그리드 유지 */
     grid-template-columns: 1fr 1fr 1fr; 
     grid-template-rows: 1fr 1fr; 
-    gap: 5px 10px; /* 간격 유지 */
+    gap: 5px 10px; 
     width: 95%;
     max-width: 500px; 
     height: 100%;
@@ -173,8 +194,6 @@ h1 {
     background-color: #e04444; 
     transform: scale(0.95); 
 }
-
-/* ⭐ 요청하신 버튼 위치 재정의 */
 
 /* 왼쪽 상단: 회전 버튼 */
 #rotate-btn { 
@@ -230,4 +249,33 @@ h1 {
     align-items: center;
     z-index: 2000;
 }
-/* ... (팝업 콘텐츠 스타일 유지) ... */
+.popup-content {
+    background-color: #222;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+.popup-content h2 {
+    color: #ffcc00;
+    margin-top: 0;
+    font-size: 2em;
+}
+.popup-content p {
+    font-size: 1.1em;
+    margin: 10px 0;
+}
+.popup-content button {
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 1.1em;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.popup-content button:hover {
+    background-color: #45a049;
+}
