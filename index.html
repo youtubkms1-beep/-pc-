@@ -4,26 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>🤫 수상한 테트리스</title>
-    <!-- ⭐ 캐시 무력화 번호를 높여서 강제 로드 -->
-    <link rel="stylesheet" href="style.css?v=20251017_17"> 
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20251017_18"> 
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- 1. 환경 선택 화면 (최상위, 게임 시작 전 표시) -->
     <div id="selector-screen">
         <h1>접속 환경을 선택해 주세요</h1>
         <button class="select-button" onclick="window.loadGame('pc')">💻 PC 환경 (키보드)</button>
         <button class="select-button" onclick="window.loadGame('mobile')">📱 모바일 환경 (터치)</button>
     </div>
 
-    <!-- 2. 메인 게임 콘텐츠 (선택 후 표시됨) -->
-    <!-- ⭐ is-mobile 클래스를 사용하여 제목 숨김/캔버스 올림 제어 -->
     <div class="game-container" id="main-game-content">
         <h1 id="game-title">🤫 수상한 테트리스</h1> 
         <canvas id="tetris-canvas" width="300" height="600"></canvas>
         <div class="info">
-            <!-- 모바일 최적화를 위해 점수/시간/라인/레벨을 가로로 배열 -->
             <div class="stats-row">
                 <p>점수: <span id="score">0</span></p>
                 <p>라인: <span id="lines-cleared">0</span></p>
@@ -46,10 +41,8 @@
             </div>
         </div>
         
-        <!-- 3. 모바일 터치 컨트롤이 삽입될 컨테이너 -->
         <div id="mobile-controls-container"></div>
         
-        <!-- 4. 게임 오버 팝업 (초기에는 숨김) -->
         <div id="game-over-popup" class="hidden-popup">
             <div class="popup-content">
                 <h2 id="popup-title">게임 오버!</h2>
@@ -61,7 +54,6 @@
         
     </div>
     
-    <!-- ⭐ 캐시 무력화 번호를 높여서 강제 로드 -->
-    <script src="game.js?v=20251017_17"></script>
+    <script src="game.js?v=20251017_18"></script>
 </body>
 </html>
