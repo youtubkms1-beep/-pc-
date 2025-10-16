@@ -1,228 +1,54 @@
-/* Google Fonts: 한글 지원을 위해 Noto Sans KR 추가 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>🤫 수상한 테트리스</title>
+    <link rel="stylesheet" href="style.css?v=20251016_7"> 
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
 
-body {
-    font-family: 'Noto Sans KR', Arial, sans-serif;
-    background-color: #333;
-    color: #eee;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden; 
-}
+    <div id="selector-screen">
+        <h1>접속 환경을 선택해 주세요</h1>
+        <button class="select-button" onclick="loadGame('pc')">💻 PC 환경 (키보드)</button>
+        <button class="select-button" onclick="loadGame('mobile')">📱 모바일 환경 (터치)</button>
+    </div>
 
-/* ---------------------------------- */
-/* 1. 환경 선택 화면 스타일 */
-/* ---------------------------------- */
-#selector-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
-    color: white;
-    display: none; 
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-.select-button {
-    padding: 15px 30px;
-    margin: 15px;
-    font-size: 22px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    transition: background-color 0.2s;
-    font-weight: bold;
-}
-.select-button:hover {
-    background-color: #45a049;
-}
-
-
-/* ---------------------------------- */
-/* 2. 메인 게임 레이아웃 */
-/* ---------------------------------- */
-.game-container {
-    display: none; 
-    flex-direction: column; 
-    align-items: center;
-    gap: 15px; 
-    padding: 20px;
-    border: 5px solid #444;
-    background-color: #333;
-    border-radius: 10px;
-    position: relative; 
-    max-width: 90vw; 
-}
-
-h1 {
-    color: #ffcc00;
-    margin-bottom: 5px;
-    font-size: 28px;
-    text-align: center;
-    width: 100%;
-}
-
-#tetris-canvas {
-    border: 5px solid #000;
-    background-color: #111;
-}
-
-.info {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    min-width: 180px;
-    margin-top: 10px; 
-}
-.info p { margin: 5px 0; font-size: 16px; }
-.info span { font-weight: bold; color: #00ff99; }
-
-#next-piece-canvas {
-    border: 2px solid #555;
-    background-color: #222;
-    margin-bottom: 15px;
-}
-
-.controls {
-    margin-top: 15px;
-    border-top: 1px dashed #444;
-    padding-top: 10px;
-}
-.controls h3 { color: #ff6666; margin-top: 5px; margin-bottom: 10px; }
-.controls p { font-size: 14px; color: #aaa; }
-
-
-/* ---------------------------------- */
-/* 3. 미디어 쿼리 (모바일 레이아웃 및 버튼 고정) */
-/* ---------------------------------- */
-@media (min-width: 600px) {
-    .game-container {
-        flex-direction: row; /* PC 환경에서는 가로 배치 */
-        max-width: none;
-    }
-    #mobile-controls-container {
-        display: none !important; /* PC에서는 컨트롤 숨김 */
-    }
-}
-
-@media (max-width: 600px) {
-    .game-container {
-        padding-bottom: 80px; /* 고정 버튼 공간 확보 */
-    }
+    <div class="game-container" id="main-game-content">
+        <h1>🤫 수상한 테트리스</h1>
+        <canvas id="tetris-canvas" width="300" height="600"></canvas>
+        <div class="info">
+            <p>점수: <span id="score">0</span></p>
+            <p>레벨: <span id="level">1</span></p>
+            <p>시간: <span id="time">00:00</span></p>
+            <p>라인: <span id="lines-cleared">0</span></p> 
+            <p>다음 블록:</p>
+            <canvas id="next-piece-canvas" width="120" height="120"></canvas>
+            
+            <div class="controls">
+                <h3>🏆 최고 점수: <span id="high-score">0</span></h3>
+                <p>이동: 방향키 4개, WASD</p>
+                <p>회전: X, W, ↑ (위쪽 방향키)</p>
+                <p>하드 드롭: 스페이스바</p>
+                <p>일시정지/재개: P</p>
+                <p>재시작: N</p>
+            </div>
+        </div>
+        
+        <div id="mobile-controls-container"></div>
+        
+        <div id="game-over-popup" class="hidden-popup">
+            <div class="popup-content">
+                <h2 id="popup-title">게임 오버!</h2>
+                <p id="popup-score-info">당신의 점수: 0점</p>
+                <p id="popup-high-score-info">최고 점수: 0점</p>
+                <button onclick="hideGameOverPopup(); startGame();">새 게임</button>
+            </div>
+        </div>
+        
+    </div>
     
-    #mobile-controls-container {
-        /* ⭐ 모바일 버튼을 화면 하단에 고정하여 터치 가능하도록 강제 */
-        position: fixed; 
-        bottom: 0;       
-        left: 0;
-        width: 100%;
-        height: 70px;
-        padding: 10px;
-        box-sizing: border-box;
-        background-color: rgba(34, 34, 34, 0.9); 
-        z-index: 500;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
-    }
-
-    .controls {
-        display: none; /* 모바일에서 PC 컨트롤 설명 숨김 */
-    }
-}
-
-
-/* ---------------------------------- */
-/* 4. 모바일 컨트롤 디자인 */
-/* ---------------------------------- */
-#mobile-controls-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr); 
-    gap: 10px;
-    width: 90%;
-    max-width: 500px;
-    height: 100%;
-    margin: 0 auto;
-}
-
-.mobile-control-btn {
-    padding: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    background-color: #555;
-    color: white;
-    border: none;
-    border-radius: 8px; 
-    width: 100%;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    /* 터치 이벤트 충돌 방지 */
-    touch-action: manipulation; 
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    transition: background-color 0.1s;
-}
-.mobile-control-btn:active {
-    background-color: #777;
-}
-
-#drop-btn { 
-    grid-column: span 5; 
-    height: 60px;
-    background-color: #ff6666;
-    font-size: 18px;
-    margin-top: 10px;
-}
-
-
-/* ---------------------------------- */
-/* 5. 게임 오버 팝업 스타일 */
-/* ---------------------------------- */
-.hidden-popup {
-    display: none !important;
-}
-
-#game-over-popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-
-.popup-content {
-    background-color: #222;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 0 30px rgba(255, 100, 100, 0.7);
-    border: 3px solid #ff6666;
-    max-width: 80vw; 
-}
-
-#popup-title { color: #ff6666; font-size: 36px; margin-bottom: 20px; }
-.popup-content p { font-size: 20px; margin: 10px 0; }
-.popup-content button {
-    margin-top: 25px;
-    padding: 10px 25px;
-    font-size: 18px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+    <script src="game.js?v=20251016_7"></script>
+</body>
+</html>
