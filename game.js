@@ -2,9 +2,9 @@
 // 게임 상수 및 설정
 // ==========================================================
 const MAX_LEVEL = 50; // ⭐ 최대 레벨 50 설정
-const DROP_INTERVAL_MIN = 100; // ⭐ 50레벨에서 100ms 간격 (극악 난이도)
+const DROP_INTERVAL_MIN = 1000; // ⭐ 50레벨에서 100ms 간격 (극악 난이도)
 const DROP_INTERVAL_MAX = 1000;
-const INPUT_DELAY_MS = 200; // 블록 좌우 이동 입력 지연 시간
+const INPUT_DELAY_MS = 1000; // 블록 좌우 이동 입력 지연 시간
 
 let lastInputTime = 0; 
 
@@ -596,3 +596,4 @@ function gameLoop() {
     }
     window.addEventListener('load', initializeOnLoad, { once: true });
 })();
+
