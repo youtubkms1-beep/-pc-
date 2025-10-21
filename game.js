@@ -1,12 +1,13 @@
 // ==========================================================
 // 게임 상수 및 설정
 // ==========================================================
-const MAX_LEVEL = 50; // ⭐ 최대 레벨 50 설정
-const DROP_INTERVAL_MIN = 1000; // ⭐ 50레벨에서 100ms 간격 (극악 난이도)
+const MAX_LEVEL = 50; 
+const DROP_INTERVAL_MIN = 100; 
 const DROP_INTERVAL_MAX = 1000;
-const INPUT_DELAY_MS = 1000; // 블록 좌우 이동 입력 지연 시간
+const INPUT_DELAY_MS = 200; 
 
 let lastInputTime = 0; 
+let selectedStartLevel = 1; 
 
 // ==========================================================
 // 게임 변수 및 캔버스 설정
@@ -20,12 +21,16 @@ const linesClearedElement = document.getElementById('lines-cleared');
 const highScoreElement = document.getElementById('high-score');
 const nextCanvas = document.getElementById('next-piece-canvas');
 const nextCtx = nextCanvas.getContext('2d');
-const selectorScreen = document.getElementById('selector-screen'); 
-const mainGameContent = document.getElementById('main-game-content'); 
 
+// --- 캔버스 크기 조정 (세로 20칸, BLOCK_SIZE 30으로 확대) ---
 const COLS = 10;
-const ROWS = 20;
-const BLOCK_SIZE = 30;
+const ROWS = 20; 
+const BLOCK_SIZE = 30; // 블록 크기를 30px로 사용 (캔버스 300x600)
+
+canvas.width = COLS * BLOCK_SIZE;
+canvas.height = ROWS * BLOCK_SIZE;
+// ---------------------------------
+
 let grid = createGrid();
 let score = 0;
 let level = 1;
@@ -39,6 +44,8 @@ let isGameOver = false;
 let isPaused = false; 
 let dropInterval = 1000; 
 let isMobileMode = false;
+let easterEggShown = false;
+let displayEasterEggMessage = false; // 이스터 에그 메시지 출력 플래그
 
 // 블록 모양 정의 (Tetrominoes)
 const TETROMINOES = [
@@ -77,15 +84,14 @@ function updateGameTime() {
     if (timeElement) timeElement.textContent = displayTime;
 }
 
-// --- 레벨 및 난이도 조정 함수 ---
+// --- 레벨 및 난이도 조정 함수 (레벨에 따른 속도 증가 로직) ---
 function calculateDropInterval(currentLevel) {
-    // 레벨 1부터 MAX_LEVEL까지 선형적으로 속도가 빨라지도록 계산
     if (currentLevel >= MAX_LEVEL) return DROP_INTERVAL_MIN;
 
     const levelRange = MAX_LEVEL - 1;
     const speedRange = DROP_INTERVAL_MAX - DROP_INTERVAL_MIN;
     
-    // 현재 레벨에 따른 속도 감소량
+    // 현재 레벨에 따른 속도 감소량 (레벨이 오를수록 속도는 증가)
     const reduction = (currentLevel - 1) * (speedRange / levelRange);
     
     return Math.max(DROP_INTERVAL_MIN, DROP_INTERVAL_MAX - reduction);
@@ -96,7 +102,7 @@ function updateLevel() {
     
     if (newLevel > level) {
         level = newLevel;
-        // 새로운 드롭 간격 계산
+        // 새로운 드롭 간격 계산 (속도 증가)
         dropInterval = calculateDropInterval(level); 
         
         // 게임 루프 타이머 재설정 (새로운 난이도 적용)
@@ -107,6 +113,18 @@ function updateLevel() {
     if (levelElement) levelElement.textContent = level;
 }
 
+// --- 이스터 에그 표시 함수 ---
+function showEasterEgg() {
+    if (easterEggShown) return;
+    easterEggShown = true;
+    displayEasterEggMessage = true;
+    
+    // 3초 후 메시지 제거
+    setTimeout(() => {
+        displayEasterEggMessage = false;
+        draw(); // 화면 갱신
+    }, 3000); 
+}
 
 // --- 게임 핵심 로직 함수 ---
 function createGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
@@ -123,7 +141,6 @@ function spawnPiece() {
 function rotatePiece(shape) { 
     const N = shape.length;
     const newShape = Array.from({ length: N }, () => Array(N).fill(0));
-    // 90도 시계 방향 회전 (x, y) -> (N-1-y, x)
     for (let y = 0; y < N; y++) { 
         for (let x = 0; x < N; x++) { 
             newShape[x][N - 1 - y] = shape[y][x]; 
@@ -137,7 +154,6 @@ function isValidMove(shape, x, y) {
             if (shape[row][col]) {
                 const newX = x + col;
                 const newY = y + row;
-                // 경계 체크 및 기존 블록 충돌 체크
                 if (newX < 0 || newX >= COLS || newY >= ROWS || (newY >= 0 && grid[newY][newX])) { 
                     return false; 
                 } 
@@ -148,15 +164,17 @@ function isValidMove(shape, x, y) {
 }
 function mergePiece() { 
     if (!currentPiece) return; 
-    const mergeColor = currentPiece.color; // 현재 블록의 색상으로 병합
+    
+    // 블록이 고정될 때 흰색으로 변경
+    const mergeColor = 'white'; 
+    
     for (let row = 0; row < currentPiece.shape.length; row++) {
         for (let col = 0; col < currentPiece.shape[row].length; col++) {
             if (currentPiece.shape[row][col]) {
                 const gridY = currentPiece.y + row;
                 const gridX = currentPiece.x + col;
-                // 그리드 범위 내에서만 병합
                 if (gridY >= 0 && gridY < ROWS && gridX >= 0 && gridX < COLS) { 
-                    grid[gridY][gridX] = mergeColor; 
+                    grid[gridY][gridX] = mergeColor; // 흰색으로 병합
                 }
             }
         }
@@ -170,14 +188,14 @@ function checkLines() {
             grid.splice(y, 1);
             grid.unshift(Array(COLS).fill(0));
             linesCleared++;
-            y++; // 라인이 제거되었으므로 인덱스를 다시 검사
+            y++; 
         }
     }
     if (linesCleared > 0) {
-        // ⭐ 점수 계산 로직: 레벨에 비례하여 점수 증가
+        // 레벨에 비례하여 점수 증가
         const baseScore = linesCleared === 1 ? 100 : 
                           linesCleared === 2 ? 300 :
-                          linesCleared === 3 ? 500 : 800; // 테트리스(4줄) 800점
+                          linesCleared === 3 ? 500 : 800;
                           
         const levelMultiplier = 1 + (level * 0.1); 
         const lineScore = Math.floor(baseScore * levelMultiplier); 
@@ -187,6 +205,11 @@ function checkLines() {
         
         updateLevel(); // 레벨 업데이트 호출
         
+        // ⭐ 이스터 에그 체크
+        if (!easterEggShown && score >= 80000) {
+            showEasterEgg();
+        }
+        
         if (scoreElement) scoreElement.textContent = score;
         if (linesClearedElement) linesClearedElement.textContent = lines; 
     }
@@ -194,7 +217,6 @@ function checkLines() {
 function drawBlock(x, y, color, context) { 
     if (color) {
         context.fillStyle = color;
-        // 외곽선 효과를 위해 1픽셀 작은 크기로 그림
         context.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
         context.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 
         context.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
@@ -207,12 +229,14 @@ function drawBlock(x, y, color, context) {
 function drawGridLines(context) { 
     context.strokeStyle = '#333'; 
     context.lineWidth = 1;
+    // 세로선
     for (let x = 1; x < COLS; x++) {
         context.beginPath();
         context.moveTo(x * BLOCK_SIZE, 0);
         context.lineTo(x * BLOCK_SIZE, ROWS * BLOCK_SIZE);
         context.stroke();
     }
+    // 가로선
     for (let y = 1; y < ROWS; y++) {
         context.beginPath();
         context.moveTo(0, y * BLOCK_SIZE);
@@ -222,12 +246,11 @@ function drawGridLines(context) {
 }
 function draw() { 
     if (!ctx) return;
-    // 캔버스 초기화
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGridLines(ctx); 
     
-    // 쌓인 블록 그리기
+    // 쌓인 블록 그리기 (흰색 고정 블록 포함)
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
             if (grid[y][x]) { drawBlock(x, y, grid[y][x], ctx); }
@@ -254,21 +277,39 @@ function draw() {
         ctx.textAlign = 'center';
         ctx.fillText("일시정지 (P)", canvas.width / 2, canvas.height / 2 + 10);
     }
+    
+    // ⭐ 이스터 에그 메시지 표시
+    if (displayEasterEggMessage) {
+        ctx.save();
+        ctx.fillStyle = '#ff00ff';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.font = 'bold 50px Jua, Noto Sans KR, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const message = "이걸 깨내!";
+        ctx.strokeText(message, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+    }
+    
     drawNextPiece();
 }
 function drawNextPiece() { 
     if (!nextCtx) return;
     nextCtx.fillStyle = '#222';
+    // 캔버스 크기(120x120)는 그대로 두고 BLOCK_SIZE(30)를 사용하여 그립니다.
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     if (nextPiece) {
         const shape = nextPiece.shape;
         const color = nextPiece.color;
         
-        // 다음 블록을 캔버스 중앙에 배치하기 위한 계산
         const pieceWidth = shape[0].length;
         const pieceHeight = shape.length;
-        const centerX = (nextCanvas.width / BLOCK_SIZE / 2) - (pieceWidth / 2);
-        const centerY = (nextCanvas.height / BLOCK_SIZE / 2) - (pieceHeight / 2);
+        // 다음 블록 캔버스에 맞게 중앙 정렬
+        const centerOffset = (120 / BLOCK_SIZE / 2); 
+        const centerX = centerOffset - (pieceWidth / 2);
+        const centerY = centerOffset - (pieceHeight / 2);
         
         for (let row = 0; row < pieceHeight; row++) {
             for (let col = 0; col < pieceWidth; col++) {
@@ -286,7 +327,6 @@ function gameOver() {
     clearInterval(timeLoopInterval); 
     document.removeEventListener('keydown', handleKeyPress); 
     
-    // 최종 점수 계산 (빈 공간 0.5점 보너스)
     let emptyCells = 0;
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
@@ -303,12 +343,11 @@ function gameOver() {
 // ==========================================================
 // 이동/회전/하드 드롭 핵심 로직 (터치/키보드 공용)
 // ==========================================================
-
 function movePiece(direction) {
     if (isGameOver || isPaused || !currentPiece) return false;
     
-    // ⭐ 입력 지연 시간 체크: 빠른 이동 방지 및 난이도 조절
     const currentTime = Date.now();
+    // 하강(down)을 제외한 이동에만 딜레이 적용
     if (direction !== 'down' && currentTime - lastInputTime < INPUT_DELAY_MS) { 
         return false; 
     }
@@ -348,76 +387,90 @@ function movePiece(direction) {
     return false;
 }
 
+// ⭐ 하드 드롭 기능 구현
 function hardDropPiece() {
     if (isGameOver || isPaused || !currentPiece) return;
     
-    let hardDropPoints = 0;
+    let dropCount = 0;
+    // 블록이 이동할 수 없을 때까지 Y좌표 증가
     while (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
         currentPiece.y++;
-        hardDropPoints++;
+        dropCount++;
     }
-    // 하드 드롭 시 점수 보너스 (1칸당 2점)
-    score += hardDropPoints * 2;
-    if (scoreElement) scoreElement.textContent = score;
     
-    // 블록 병합 및 다음 블록 준비
+    // 하드 드롭 점수 보너스 (칸당 2점)
+    score += dropCount * 2; 
+    if (scoreElement) scoreElement.textContent = score;
+
+    // 즉시 병합 및 다음 블록 생성
     mergePiece();
     checkLines();
     currentPiece = nextPiece;
     nextPiece = spawnPiece();
     
-    // 다음 블록이 스폰되자마자 충돌하면 게임 오버
-    if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) { gameOver(); }
-    draw(); 
+    // 다음 블록이 놓일 수 없으면 게임 오버
+    if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) { 
+        gameOver(); 
+    }
+    draw();
+    
+    // 하드 드롭 후 다음 루프까지 대기 시간 없이 즉시 실행
+    clearInterval(gameLoopInterval);
+    gameLoopInterval = setInterval(gameLoop, dropInterval);
 }
+
 
 // ==========================================================
 // 키보드 입력 처리 (PC)
 // ==========================================================
 function handleKeyPress(e) {
-    // 1. P(일시정지)와 N(새 게임) 키 처리
-    switch (e.key.toLowerCase()) {
-        case 'n': 
-            e.preventDefault(); 
-            if (isGameOver) { window.hideGameOverPopup(); window.startGame(); }
-            return;
-        case 'p': 
-            e.preventDefault();
-            if (!isGameOver) { 
-                isPaused = !isPaused; 
-                if (isPaused) { 
-                    clearInterval(gameLoopInterval);
-                    clearInterval(timeLoopInterval); 
-                } else {
-                    // 시간 타이머 재시작 (정지된 시간만큼 제외)
-                    startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); 
-                    timeLoopInterval = setInterval(updateGameTime, 1000); 
-                    // 게임 루프 재시작 (현재 레벨 속도 유지)
-                    gameLoopInterval = setInterval(gameLoop, dropInterval);
-                }
-                draw(); 
+    // 1. N(재시작) 키 처리 
+    if (e.key.toLowerCase() === 'n') {
+        e.preventDefault(); 
+        if (isGameOver || !isGameOver) { 
+            window.hideGameOverPopup(); 
+            window.startGame(); 
+        } 
+        return;
+    }
+    
+    // 2. P(일시정지) 키 처리
+    if (e.key.toLowerCase() === 'p') { 
+        e.preventDefault();
+        if (!isGameOver) { 
+            isPaused = !isPaused; 
+            if (isPaused) { 
+                clearInterval(gameLoopInterval);
+                clearInterval(timeLoopInterval); 
+            } else {
+                // 시간 복원
+                startTime = Date.now() - (Math.floor((Date.now() - startTime) / 1000) * 1000); 
+                timeLoopInterval = setInterval(updateGameTime, 1000); 
+                gameLoopInterval = setInterval(gameLoop, dropInterval);
             }
-            return;
+            draw(); 
+        }
+        return;
     }
 
-    // 2. 게임 오버 또는 일시정지 상태에서는 다른 키 무시
+    // 3. 게임 오버 또는 일시정지 상태에서는 다른 키 무시
     if (isGameOver || isPaused) { e.preventDefault(); return; }
 
-    // 3. 스페이스바(하드 드롭) 처리
+    // 4. 스페이스바(하드 드롭) 처리
     if (e.key.toLowerCase() === ' ') {
         e.preventDefault();
         hardDropPiece(); 
         return; 
     }
 
-    // 4. 나머지 이동 키 처리
+    // 5. 나머지 이동 키 처리
     let direction;
     switch (e.key.toLowerCase()) {
         case 'arrowleft': case 'a': direction = 'left'; break;
         case 'arrowright': case 'd': direction = 'right'; break;
         case 'arrowdown': case 's': direction = 'down'; break;
-        case 'arrowup': case 'w': case 'x': direction = 'rotate'; break;
-        default: return; // 처리할 키가 아니면 종료
+        case 'arrowup': case 'w': case 'x': case 'control': direction = 'rotate'; break;
+        default: return; 
     }
 
     if (movePiece(direction)) { 
@@ -426,20 +479,20 @@ function handleKeyPress(e) {
 }
 
 // ==========================================================
-// HTML에서 접근 가능하도록 window 객체에 할당 (모바일 컨트롤)
+// HTML에서 접근 가능하도록 window 객체에 할당 (메인 진입점/컨트롤)
 // ==========================================================
 
-// 1. 모바일 컨트롤 생성 및 이벤트 연결
-function createMobileControls() {
+// 모바일 컨트롤 생성 함수
+window.createMobileControls = function() {
     const container = document.getElementById('mobile-controls-container');
     if (!container) return; 
     container.innerHTML = '<div id="mobile-controls-grid"></div>'; 
     const controlsGrid = document.getElementById('mobile-controls-grid');
     if (!controlsGrid) return;
 
-    // 버튼 데이터: [텍스트, 이동 방향, ID]
     const buttons = [
-        ['⬆️', 'rotate', 'rotate-btn'], 
+        // ⭐ 회전 화살표(&#x21BB;)로 변경
+        ['&#x21BB;', 'rotate', 'rotate-btn'], 
         ['⬅️', 'left', 'left-btn'], 
         ['⬇️', 'down', 'down-btn'], 
         ['➡️', 'right', 'right-btn'],
@@ -452,36 +505,30 @@ function createMobileControls() {
         btn.className = 'mobile-control-btn';
         btn.id = idName;
 
-        // 핵심: 터치 시 해당 동작 함수를 직접 호출
         const handleAction = (e) => {
             e.preventDefault(); 
             e.stopPropagation(); 
-            if (isGameOver || isPaused) return; // 게임 중이 아닐 때 터치 무시
+            if (isGameOver || isPaused) return; 
             
             if (action === 'drop') {
                 hardDropPiece(); 
             } else {
-                // movePiece는 내부에서 INPUT_DELAY_MS를 체크함
                 movePiece(action); 
             }
         };
 
-        // 터치 시작 이벤트 (passive: false는 스크롤 방지, 필수)
+        // passive: false를 사용하여 touchstart/touchend에서 preventDefault를 허용
         btn.addEventListener('touchstart', handleAction, { passive: false }); 
-        
-        // 마우스 클릭 이벤트 (PC 환경 디버깅용)
         btn.addEventListener('mousedown', handleAction);
         
-        // touchend, mouseup 이벤트 (버튼을 뗄 때 아무 작업 없음)
         const handleRelease = (e) => { e.preventDefault(); e.stopPropagation(); };
         btn.addEventListener('touchend', handleRelease, { passive: false }); 
         btn.addEventListener('mouseup', handleRelease);
         
         controlsGrid.appendChild(btn);
     });
-}
+};
 
-// 2. 팝업 표시/숨김 함수
 window.showGameOverPopup = function(finalScore, bonusScore) {
     const popup = document.getElementById('game-over-popup');
     if (!popup) return;
@@ -500,12 +547,14 @@ window.hideGameOverPopup = function() {
     if (popup) popup.classList.add('hidden-popup');
 }
 
-
-// 3. 메인 진입점 함수 (환경 설정 후 게임 시작)
 window.loadGame = function(mode) {
     isMobileMode = (mode === 'mobile');
     const selectorScreen = document.getElementById('selector-screen');
     const mainGameContent = document.getElementById('main-game-content');
+    
+    const levelInput = document.getElementById('start-level');
+    let selectedLevel = parseInt(levelInput.value) || 1;
+    selectedStartLevel = Math.max(1, Math.min(MAX_LEVEL, selectedLevel));
     
     if (selectorScreen) selectorScreen.style.display = 'none';
     if (mainGameContent) mainGameContent.style.display = 'flex'; 
@@ -513,7 +562,7 @@ window.loadGame = function(mode) {
     const mobileControlsContainer = document.getElementById('mobile-controls-container');
     if (mobileControlsContainer) { 
         if (isMobileMode) {
-            createMobileControls();
+            window.createMobileControls();
             mobileControlsContainer.style.display = 'block'; 
         } else {
             mobileControlsContainer.style.display = 'none';
@@ -522,7 +571,6 @@ window.loadGame = function(mode) {
     window.startGame();
 }
 
-// 4. 게임 초기화 및 루프 시작
 window.startGame = function() {
     if (gameLoopInterval) clearInterval(gameLoopInterval);
     if (timeLoopInterval) clearInterval(timeLoopInterval);
@@ -530,13 +578,18 @@ window.startGame = function() {
     isPaused = false;
     grid = createGrid();
     score = 0;
-    level = 1; 
     lines = 0;
-    dropInterval = DROP_INTERVAL_MAX; // 초기 드롭 간격 설정 (1000ms)
+    
+    // 이스터 에그 상태 초기화
+    easterEggShown = false;
+    displayEasterEggMessage = false;
+    
+    level = selectedStartLevel; 
+    dropInterval = calculateDropInterval(level); 
+    
     startTime = Date.now();
     timeLoopInterval = setInterval(updateGameTime, 1000);
     
-    // UI 업데이트
     if (scoreElement) scoreElement.textContent = score;
     if (levelElement) levelElement.textContent = level; 
     if (linesClearedElement) linesClearedElement.textContent = lines;
@@ -547,11 +600,9 @@ window.startGame = function() {
     currentPiece = spawnPiece();
     nextPiece = spawnPiece();
     
-    // 키보드 이벤트 리스너 설정 (PC 환경)
     document.removeEventListener('keydown', handleKeyPress);
     document.addEventListener('keydown', handleKeyPress);
     
-    // 게임 루프 시작
     gameLoopInterval = setInterval(gameLoop, dropInterval); 
     draw();
 };
@@ -563,17 +614,14 @@ function gameLoop() {
     if (isGameOver || isPaused) return; 
     if (!currentPiece) return; 
     
-    // 블록 한 칸 내리기 시도
     if (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
         currentPiece.y++;
     } else {
-        // 더 이상 내려갈 수 없으면 병합하고 다음 블록 스폰
         mergePiece();
         checkLines();
         currentPiece = nextPiece;
         nextPiece = spawnPiece();
         
-        // 다음 블록 스폰 후 즉시 충돌 확인
         if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) { 
             gameOver(); 
         }
@@ -591,9 +639,11 @@ function gameLoop() {
             mainGameContent.style.display = 'none'; 
             selectorScreen.style.display = 'flex'; 
             loadHighScore();
-            draw(); // 초기 화면에서 Next Canvas를 그리기 위해 호출
+            // 캔버스 크기를 JS에서 설정한 대로 다시 강제 적용
+            canvas.width = COLS * BLOCK_SIZE;
+            canvas.height = ROWS * BLOCK_SIZE;
+            draw(); 
         }
     }
     window.addEventListener('load', initializeOnLoad, { once: true });
 })();
-
