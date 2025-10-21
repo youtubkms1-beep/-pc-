@@ -4,20 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>🤫 수상한 테트리스</title>
-    <link rel="stylesheet" href="style.css?v=20251017_18"> 
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20251017_28"> 
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div id="selector-screen">
-        <h1>접속 환경</h1>
+        <h1>🤫 수상한 테트리스</h1>
+        <h2>접속 환경</h2>
+        <div class="level-select-group">
+            <label for="start-level">시작 레벨 (1~50):</label>
+            <input type="number" id="start-level" value="1" min="1" max="50">
+        </div>
         <button class="select-button" onclick="window.loadGame('pc')">💻 PC 환경 (키보드)</button>
         <button class="select-button" onclick="window.loadGame('mobile')">📱 모바일 환경 (터치)</button>
     </div>
 
     <div class="game-container" id="main-game-content">
         <h1 id="game-title">🤫 수상한 테트리스</h1> 
-        <canvas id="tetris-canvas" width="300" height="600"></canvas>
+        <canvas id="tetris-canvas" width="200" height="400"></canvas>
         <div class="info">
             <div class="stats-row">
                 <p>점수: <span id="score">0</span></p>
@@ -34,10 +39,10 @@
             <div class="controls">
                 <h3>🏆 최고 점수: <span id="high-score">0</span></h3>
                 <p>이동: 방향키 4개, WASD</p>
-                <p>회전: X, W, ↑ (위쪽 방향키)</p>
-                <p>하드 드롭: 스페이스바</p>
+                <p>회전: X, W, ↑, Ctrl</p>
+                <p>하드 드롭: <strong class="key-highlight">스페이스바</strong></p>
                 <p>일시정지/재개: P</p>
-                <p>재시작: N</p>
+                <p>재시작: <strong class="key-highlight">N</strong></p>
             </div>
         </div>
         
@@ -54,7 +59,6 @@
         
     </div>
     
-    <script src="game.js?v=20251017_18"></script>
+    <script src="game.js?v=20251017_28"></script>
 </body>
 </html>
-
